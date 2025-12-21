@@ -16,6 +16,22 @@ static unsigned int get_hash(const hash* h, unsigned int key)
 
 	// ToDo: ハッシュ関数としてhash_funcを使った
 	// オープンアドレス法によるハッシュ値を求める
+	unsigned int index = hash_func(key, h->max_size); // hash_funcで入れる位置を探す
+	// 一つずつ右へ進む
+	for (unsigned int i = 0; i < h->max_size; i++)
+	{
+		unsigned int cur = (index + i) % h->max_size;
+
+		// 同じキーが見つかった
+		if (h->nodes[cur].key == key) {
+			return cur;
+		}
+
+		// 空き'~0'に到達したので目的のkeyは存在しない
+		if (h->nodes[cur].key == ~0) {
+			return ~0;
+		}
+	}
 	return ~0;
 }
 
@@ -59,7 +75,20 @@ bool add(hash* h, unsigned int key, const char* value)
 
 	// ToDo: ハッシュ関数としてhash_funcを使った
 	// オープンアドレス法によりキーを追加
-	return false;
+	unsigned int index = hash_func(key, h->max_size);
+
+	for (unsigned int i = 0; i < h->max_size; i++)
+	{
+		unsigned int cur = (index + i) % h->max_size;
+
+		// 空き'~0'なら追加、同じキーなら上書きする
+		if (h->nodes[cur].key == ~0 || h->nodes[cur].key == key) {
+			h->nodes[cur].key = key;
+			strcpy_s(h->nodes[cur].value, sizeof(h->nodes[cur].value), value); // コピー
+			return true;
+		}
+	}
+	return false; // 全て埋まっている
 }
 
 // keyの値を見てノードを検索して、値を取得する(なければNULLを返す)
@@ -68,6 +97,18 @@ const char* get(const hash* h, unsigned int key)
 	if (key == ~0) return NULL;
 
 	// ToDo: keyから値が格納されている場所を求め、値の場所を返す
+	unsigned int index = hash_func(key, h->max_size);
+
+	for (unsigned int i = 0; i < h->max_size; i++) {
+		unsigned int cur = (index + i) % h->max_size;
+
+		// 一致したら終了
+		if (h->nodes[cur].key == key) return h->nodes[cur].value;
+
+		// 空きに到達したら、そのkeyは存在しない
+		if (h->nodes[cur].key == ~0) return NULL;
+		
+	}
 	return NULL;
 }
 
